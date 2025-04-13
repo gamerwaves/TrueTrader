@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Login</h2>
+<form method="post">
+  <input name="username" class="form-control mb-2" placeholder="Username" required>
+  <input name="password" type="password" class="form-control mb-2" placeholder="Password" required>
+  <button class="btn btn-success">Login</button>
+</form>
+<a href="{{ url_for('register') }}">Don't have an account? Register</a>
+{% endblock %}
