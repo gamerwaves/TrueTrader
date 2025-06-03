@@ -1,48 +1,54 @@
+# By: Dwait
+# Level: 4
+# TrueTrader is a stock market simulator to help kids learn about stocks and the market.
+
+# Import libraries (these are like toolkits with useful functions)
 import os
 import logging
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
-from pymongo import MongoClient
-import yfinance as yf
+from pymongo import MongoClient  # To connect to our database
+import yfinance as yf  # To get real stock data from the internet
 import datetime as dt
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # Loads hidden secret keys safely
+from passlib.hash import sha256_crypt
 
-
+# Create the Flask app (like starting our website)
 app = Flask(__name__)
-
-
+app.secret_key = os.getenv('SHA256_SALT')
+# Load secret keys from the .env file (keeps things safe)
 load_dotenv()
 
-
-uri = os.getenv("MONGO_URI")  
+# Connect to MongoDB database using a secure link
+uri = os.getenv("MONGO_URI")
 client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
 db = client["users_collection"]
-users_collection = db["users"]
-portfolio_collection = db["portfolios"]
+users_collection = db["users"]  # Stores usernames and passwords
+portfolio_collection = db["portfolios"]  # Stores each user's stock portfolio
 
-
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')  
+# Secret key for login sessions (helps keep track of who's logged in)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 app.config['SESSION_TYPE'] = 'filesystem'
 
-
+# Set up logging to see what's happening in our app
 logging.basicConfig(level=logging.INFO)
 
-
+# Function to get the current price of a stock
 def get_stock_price(symbol):
     try:
         stock = yf.Ticker(symbol)
-        data = stock.history(period="1d")
+        data = stock.history(period="1d")  # Get today’s data
         if not data.empty:
-            return round(data['Close'][-1], 2)
+            return round(data['Close'][-1], 2)  # Return last closing price
         logging.warning(f"No data returned for {symbol}")
         return None
     except Exception as e:
         logging.error(f"Error fetching price for {symbol}: {str(e)}")
         return None
 
-
-
+# Function to get stock price chart data for graphing
 def get_bar_data(symbol, timeframe):
     try:
+        # Set how many days of data we want based on timeframe
         if timeframe in ('1m', '5m', '30m'):
             days = 7 if timeframe == '1m' else 60
             start_date = dt.datetime.now() - dt.timedelta(days=days)
@@ -58,18 +64,19 @@ def get_bar_data(symbol, timeframe):
         logging.error(f"Error fetching bar data for {symbol}: {str(e)}")
         return False
 
-
+# Redirect the home page to the dashboard
 @app.route('/')
 def index():
     return redirect(url_for('dashboard'))
 
-
+# Register new users
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']
+        password = sha256_crypt.hash(request.form['password'])
 
+        # Check if user already exists
         if users_collection.find_one({'username': username}):
             flash('Username already exists. Choose a different one.', 'danger')
         else:
@@ -79,15 +86,16 @@ def register():
 
     return render_template('register.html')
 
-
+# Login existing users
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        user = users_collection.find_one({'username': username, 'password': password})
-        if user:
+        # Check login credentials
+        user = users_collection.find_one({'username': username})
+        if user and sha256_crypt.verify(password, user['password']):
             session['username'] = username
             flash('Login successful.', 'success')
             return redirect(url_for('dashboard'))
@@ -96,25 +104,30 @@ def login():
 
     return render_template('login.html')
 
+# Logout the user
 @app.route('/logout')
 def logout():
     session.pop('username', None)
     flash('Logged out successfully.', 'info')
     return redirect(url_for('login'))
 
-
+# Dashboard where users manage stocks
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
+    # Check if user is logged in
     if 'username' not in session:
         return redirect(url_for('login'))
 
+    # Get user data and their portfolio
     user = users_collection.find_one({'username': session['username']})
     portfolio = portfolio_collection.find_one({'user_id': user['_id']})
 
+    # If no portfolio, give them $10,000 to start
     if not portfolio:
         portfolio = {'user_id': user['_id'], 'stocks': {}, 'cash': 10000}
         portfolio_collection.insert_one(portfolio)
 
+    # Show user how much their portfolio is worth
     portfolio_value = 0
     stock_info = {}
 
@@ -131,6 +144,7 @@ def dashboard():
             }
             portfolio_value += quantity * current_price
 
+    # Handle buying or selling a stock
     if request.method == 'POST':
         symbol = request.form['symbol'].upper()
         action = request.form['action']
@@ -170,6 +184,7 @@ def dashboard():
                 cash += cost
                 flash(f'Sold {quantity} shares of {symbol}', 'success')
 
+        # Save changes back to the database
         portfolio_collection.update_one(
             {'user_id': user['_id']},
             {'$set': {'stocks': stocks, 'cash': cash}}
@@ -183,7 +198,7 @@ def dashboard():
         portfolio_value=round(portfolio_value, 2)
     )
 
-
+# API endpoint to get stock price (used by frontend JavaScript)
 @app.route('/api/stock_price/', methods=['GET'])
 def api_stock_price():
     symbol = request.args.get('symbol')
@@ -194,6 +209,8 @@ def api_stock_price():
     if price:
         return jsonify({symbol.upper(): price}), 200
     return jsonify({"error": "Invalid symbol"}), 404
+
+# Renders an interactive chart in the browser
 @app.route('/chart/<symbol>')
 def chart(symbol):
     html = f"""
@@ -243,29 +260,31 @@ def chart(symbol):
     """
     return Response(html, mimetype='text/html')
 
+# Returns chart data (price history) as JSON
 @app.route('/api/chart_data/<symbol>')
 def chart_data(symbol):
     try:
         ticker = yf.Ticker(symbol)
         data = ticker.history(period="20y", interval="1d", auto_adjust=True)
-        
+
         if data.empty:
             return jsonify({"error": "No data found for the symbol"}), 404
-        
+
         chart_data = []
-        
         for timestamp, row in data.iterrows():
             chart_data.append([
-                int(timestamp.timestamp() * 1000), 
+                int(timestamp.timestamp() * 1000),  # Date in milliseconds
                 float(row['Open']),
                 float(row['High']),
                 float(row['Low']),
                 float(row['Close'])
             ])
         return jsonify(chart_data)
-    
+
     except Exception as e:
         return jsonify({"error": f"Failed to fetch chart data: {str(e)}"}), 500
+
+# Endpoint to get detailed daily stock history for a year
 @app.route("/api/stock_history/<symbol>")
 def stock_history(symbol):
     try:
@@ -292,7 +311,6 @@ def stock_history(symbol):
         print(f"Error fetching stock history for {symbol}: {e}")
         return jsonify({"error": "internal error"}), 500
 
-
-
+# Start the Flask app
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0")
+    app.run(debug=False, port=5000)

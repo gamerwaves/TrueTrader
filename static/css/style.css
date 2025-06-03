@@ -1,0 +1,63 @@
+/* Banner showing portfolio value, balance, and user info */
+.info-banner {
+    background-color: #c00;       /* Red background */
+    color: white;                 /* White text color */
+    font-weight: bold;           /* Bold text */
+    padding: 10px;               /* Inner spacing */
+    text-align: center;          /* Centered text */
+    margin-bottom: 20px;         /* Space below the banner */
+    margin-top: 20px;            /* Space above the banner */
+    border-radius: 8px;          /* Rounded corners */
+  }
+  
+  /* Icon box styles for dashboard features */
+  .icon-box {
+    text-align: center;          /* Center text and image */
+    padding: 20px;               /* Inner spacing */
+    border-radius: 10px;         /* Slightly rounded corners */
+    background-color: #f1f4f6;   /* Light gray background */
+    margin: 10px;                /* Space around each icon box */
+    flex: 1;                     /* Make icon boxes expand equally in flex containers */
+    cursor: pointer;            /* Show pointer on hover */
+  }
+  
+  /* Images inside icon boxes */
+  .icon-box img {
+    width: 50px;                 /* Set width */
+    margin-bottom: 10px;        /* Space below image */
+  }
+  
+  /* Adds top margin to forms for spacing */
+  .search-form,
+  .trade-form {
+    margin-top: 20px;
+  }
+  
+  /* Applies a circular border radius and hides overflow */
+  .rounded {
+    border-radius: 100px;        /* Fully rounded (circle or pill shape) */
+    overflow: hidden;            /* Hide anything outside the bounds */
+  }
+  
+  /* Container for rendering charts */
+  .chart-container {
+    display: flex;               /* Use flexbox layout */
+    flex-direction: column;     /* Stack charts vertically */
+    align-items: center;        /* Center charts horizontally */
+    margin-top: 30px;           /* Space above the container */
+  }
+  
+  /* Add spacing below each chart inside the container */
+  .chart-container div {
+    margin-bottom: 20px;
+  }
+  
+  /* Utility class to center any element horizontally and set fixed size */
+  .center {
+    display: block;              /* Block-level element */
+    margin-left: auto;           /* Center horizontally */
+    margin-right: auto;
+    width: 20%;                  /* Fixed width */
+    height: 20%;                 /* Fixed height */
+  }
+  

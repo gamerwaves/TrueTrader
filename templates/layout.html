@@ -1,20 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Stock Simulator</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="p-4">
-  <div class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </div>
-</body>
+  <head>
+    <!-- This section contains information for the browser -->
+    <meta charset="utf-8" />
+    <title>TrueTrader</title>
+
+    <!-- Link to your own custom CSS for extra styles -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    <!-- Link to Bootstrap CSS so we can use pre-made nice-looking styles -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+  </head>
+  <body class="p-4">
+    <!-- This shows the TrueTrader logo at the top of the page -->
+    <img
+      src="/static/images/logo.png"
+      class="center mb-4"
+      alt="TrueTrader Logo"
+    />
+
+    <!-- This is the main container where all page content will go -->
+    <div class="container">
+
+      <!-- This section shows messages like 'You logged in!' or 'Error happened' -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <!-- Each message gets its own colored alert box -->
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- This is where the page-specific content will go -->
+      {% block content %}{% endblock %}
+
+    </div>
+  </body>
 </html>

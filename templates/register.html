@@ -1,10 +1,36 @@
+<!-- This line tells Flask to use the layout.html file as the base -->
 {% extends "layout.html" %}
+
+<!-- This is the part that fills the 'content' section in layout.html -->
 {% block content %}
+
+<!-- Page title -->
 <h2>Register</h2>
+
+<!-- Registration form that sends data using POST method -->
 <form method="post">
-  <input name="username" class="form-control mb-2" placeholder="Username" required>
-  <input name="password" type="password" class="form-control mb-2" placeholder="Password" required>
+  <!-- Input box for username -->
+  <input
+    name="username"
+    class="form-control mb-2"
+    placeholder="Username"
+    required
+  />
+
+  <!-- Input box for password (hidden with dots) -->
+  <input
+    name="password"
+    type="password"
+    class="form-control mb-2"
+    placeholder="Password"
+    required
+  />
+
+  <!-- Button to submit the form -->
   <button class="btn btn-primary">Register</button>
 </form>
+
+<!-- A link to go to the login page if the user already has an account -->
 <a href="{{ url_for('login') }}">Already have an account? Login</a>
+
 {% endblock %}
